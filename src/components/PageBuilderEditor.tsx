@@ -20,15 +20,24 @@ export const PageBuilderEditor = () => {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const { toast } = useToast();
 
-  const addComponent = (type: string, content?: string) => {
+  const addComponent = (type: string, content?: string, index?: number) => {
     const newComponent: Component = {
-      id: `${type}-${Date.now()}`,
+      id: `${type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       type,
       content: content || getDefaultContent(type),
       props: getDefaultProps(type),
     };
 
-    setComponents([...components, newComponent]);
+    if (index !== undefined) {
+      setComponents(prev => {
+        const newComponents = [...prev];
+        newComponents.splice(index, 0, newComponent);
+        return newComponents;
+      });
+    } else {
+      setComponents(prev => [...prev, newComponent]);
+    }
+    
     setSelectedComponent(newComponent);
     
     toast({
@@ -94,6 +103,7 @@ export const PageBuilderEditor = () => {
           onSelectComponent={setSelectedComponent}
           onUpdateComponent={updateComponent}
           onDeleteComponent={deleteComponent}
+          onAddComponent={addComponent}
           isPreviewMode={isPreviewMode}
         />
         
