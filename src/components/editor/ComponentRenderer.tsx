@@ -41,10 +41,11 @@ export const ComponentRenderer = ({
     setEditContent(component.content || "");
   };
 
-  // Apply spacing styles
   const spacingStyles = {
     marginTop: `${component.props?.marginTop || 0}px`,
     marginBottom: `${component.props?.marginBottom || 0}px`,
+    paddingTop: `${component.props?.paddingTop || 0}px`,
+    paddingBottom: `${component.props?.paddingBottom || 0}px`,
   };
 
   const renderComponent = () => {
@@ -114,6 +115,7 @@ export const ComponentRenderer = ({
               variant={component.props?.variant || "default"}
               size={component.props?.size || "default"}
               className="cursor-pointer"
+              style={{ backgroundColor: component.props?.backgroundColor }}
               onClick={!isPreviewMode ? handleEdit : undefined}
             >
               {isEditing ? (
@@ -168,7 +170,7 @@ export const ComponentRenderer = ({
       case "video":
         return (
           <div className="cursor-pointer" style={spacingStyles} onClick={handleEdit}>
-            {component.content && component.content.includes("youtube") ? (
+            {component.content && (component.content.includes("youtube") || component.content.includes("vimeo")) ? (
               <div className="aspect-video rounded-lg overflow-hidden">
                 <iframe
                   src={component.content}
@@ -178,7 +180,7 @@ export const ComponentRenderer = ({
                 />
               </div>
             ) : (
-              <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center">
+              <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300">
                 <div className="text-center">
                   <div className="w-12 h-12 mx-auto mb-2 bg-gray-300 rounded-full flex items-center justify-center">
                     <svg className="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
@@ -247,6 +249,131 @@ export const ComponentRenderer = ({
           </div>
         );
 
+      case "section":
+        return (
+          <div 
+            className="min-h-[100px] border-2 border-dashed border-gray-300 rounded-lg p-4"
+            style={{
+              backgroundColor: component.props?.backgroundColor || "transparent",
+              ...spacingStyles
+            }}
+          >
+            <div className="text-center text-gray-500">
+              <h3 className="font-medium">Seção</h3>
+              <p className="text-sm">Arraste componentes aqui</p>
+            </div>
+          </div>
+        );
+
+      case "columns":
+        const columnCount = component.props?.columns || 2;
+        return (
+          <div className={`grid grid-cols-${columnCount} gap-4`} style={spacingStyles}>
+            {Array.from({ length: columnCount }).map((_, index) => (
+              <div key={index} className="min-h-[80px] border-2 border-dashed border-gray-300 rounded p-3">
+                <p className="text-sm text-gray-500 text-center">Coluna {index + 1}</p>
+              </div>
+            ))}
+          </div>
+        );
+
+      case "navigation":
+        const navItems = component.props?.navItems || ['Home', 'Sobre', 'Serviços', 'Contato'];
+        return (
+          <nav className="bg-white shadow-sm border rounded-lg p-4" style={spacingStyles}>
+            <ul className="flex space-x-6">
+              {navItems.map((item: string, index: number) => (
+                <li key={index}>
+                  <a href="#" className="text-gray-700 hover:text-primary transition-colors">
+                    {item}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        );
+
+      case "form":
+        return (
+          <div className="bg-white border rounded-lg p-6" style={spacingStyles}>
+            <h3 className="text-lg font-medium mb-4">Formulário de Contato</h3>
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+                <input type="text" className="w-full p-2 border border-gray-300 rounded" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input type="email" className="w-full p-2 border border-gray-300 rounded" />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mensagem</label>
+                <textarea rows={3} className="w-full p-2 border border-gray-300 rounded resize-none"></textarea>
+              </div>
+              <Button>Enviar</Button>
+            </div>
+          </div>
+        );
+
+      case "gallery":
+        const galleryImages = component.props?.images || ['/placeholder.svg', '/placeholder.svg', '/placeholder.svg'];
+        return (
+          <div className="grid grid-cols-3 gap-2" style={spacingStyles}>
+            {galleryImages.map((src: string, index: number) => (
+              <img 
+                key={index}
+                src={src} 
+                alt={`Galeria ${index + 1}`}
+                className="w-full h-24 object-cover rounded"
+              />
+            ))}
+          </div>
+        );
+
+      case "map":
+        return (
+          <div className="aspect-video bg-gray-100 rounded-lg flex items-center justify-center border-2 border-dashed border-gray-300" style={spacingStyles}>
+            <div className="text-center">
+              <div className="w-12 h-12 mx-auto mb-2 bg-gray-300 rounded-full flex items-center justify-center">
+                <svg className="w-6 h-6 text-gray-600" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
+                </svg>
+              </div>
+              <p className="text-sm text-gray-600">Mapa do Google</p>
+            </div>
+          </div>
+        );
+
+      case "custom-html":
+        return (
+          <div className="bg-gray-50 border rounded-lg p-4" style={spacingStyles}>
+            {component.content ? (
+              <div dangerouslySetInnerHTML={{ __html: component.content }} />
+            ) : (
+              <div className="text-center text-gray-500">
+                <p className="text-sm">HTML Personalizado</p>
+                <button onClick={handleEdit} className="text-primary text-sm mt-1">Clique para editar</button>
+              </div>
+            )}
+            {isEditing && (
+              <div className="mt-2">
+                <textarea
+                  value={editContent}
+                  onChange={(e) => setEditContent(e.target.value)}
+                  onBlur={handleSaveEdit}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") handleCancelEdit();
+                  }}
+                  className="w-full p-2 border border-primary rounded outline-none resize-none font-mono text-sm"
+                  placeholder="<div>Seu HTML aqui</div>"
+                  rows={4}
+                  autoFocus
+                />
+              </div>
+            )}
+          </div>
+        );
+
       default:
         return (
           <div className="p-4 bg-gray-50 border border-gray-200 rounded" style={spacingStyles}>
@@ -267,7 +394,6 @@ export const ComponentRenderer = ({
       onClick={!isPreviewMode ? onSelect : undefined}
       style={{ padding: "1.5rem" }}
     >
-      {/* Component Controls */}
       {!isPreviewMode && (
         <div className={`absolute right-4 top-4 flex space-x-1 transition-opacity ${
           isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
@@ -301,7 +427,6 @@ export const ComponentRenderer = ({
         </div>
       )}
 
-      {/* Component Content */}
       {renderComponent()}
     </div>
   );

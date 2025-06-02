@@ -116,20 +116,34 @@ function getDefaultContent(type: string): string {
     image: "/placeholder.svg",
     video: "https://www.youtube.com/embed/dQw4w9WgXcQ",
     list: "Item 1\nItem 2\nItem 3",
+    section: "",
+    columns: "",
+    navigation: "",
+    form: "",
+    gallery: "",
+    map: "",
+    "custom-html": "<div>Seu HTML personalizado aqui</div>",
   };
   return defaults[type] || "";
 }
 
 function getDefaultProps(type: string): Record<string, any> {
   const defaults: Record<string, Record<string, any>> = {
-    heading: { level: 1, color: "#1f2937", fontSize: "2xl", marginTop: 0, marginBottom: 0 },
-    text: { color: "#4b5563", fontSize: "base", marginTop: 0, marginBottom: 0 },
-    button: { variant: "default", size: "default", marginTop: 0, marginBottom: 0 },
-    image: { alt: "Imagem", width: "full", marginTop: 0, marginBottom: 0 },
-    video: { autoplay: false, controls: true, marginTop: 0, marginBottom: 0 },
-    list: { color: "#4b5563", fontSize: "base", marginTop: 0, marginBottom: 0 },
+    heading: { level: 1, color: "#1f2937", fontSize: "2xl", marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 },
+    text: { color: "#4b5563", fontSize: "base", marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 },
+    button: { variant: "default", size: "default", backgroundColor: "#4338ca", marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 },
+    image: { alt: "Imagem", width: "full", marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 },
+    video: { autoplay: false, controls: true, marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 },
+    list: { color: "#4b5563", fontSize: "base", marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 },
+    section: { backgroundColor: "#ffffff", marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 },
+    columns: { columns: 2, marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 },
+    navigation: { navItems: ["Home", "Sobre", "Serviços", "Contato"], marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 },
+    form: { marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 },
+    gallery: { images: ["/placeholder.svg", "/placeholder.svg", "/placeholder.svg"], marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 },
+    map: { marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 },
+    "custom-html": { marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 },
   };
-  return defaults[type] || { marginTop: 0, marginBottom: 0 };
+  return defaults[type] || { marginTop: 0, marginBottom: 0, paddingTop: 0, paddingBottom: 0 };
 }
 
 function getComponentDisplayName(type: string): string {
@@ -140,8 +154,13 @@ function getComponentDisplayName(type: string): string {
     image: "Imagem",
     video: "Vídeo",
     list: "Lista",
+    section: "Seção",
+    columns: "Colunas",
+    navigation: "Navegação",
     form: "Formulário",
     gallery: "Galeria",
+    map: "Mapa",
+    "custom-html": "HTML Personalizado",
   };
   return names[type] || type;
 }

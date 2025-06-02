@@ -31,7 +31,6 @@ const components: ComponentItem[] = [
   // Interactive Components
   { id: "navigation", name: "Navegação", icon: <Navigation className="w-4 h-4" />, category: "interactive" },
   { id: "menu", name: "Menu", icon: <Menu className="w-4 h-4" />, category: "interactive" },
-  { id: "slider", name: "Slider", icon: <div className="w-4 h-4 border border-gray-400 rounded" />, category: "interactive" },
   { id: "gallery", name: "Galeria", icon: <Grid3x3 className="w-4 h-4" />, category: "interactive" },
   { id: "map", name: "Mapa", icon: <div className="w-4 h-4 border border-gray-400 rounded-full" />, category: "interactive" },
   { id: "form", name: "Formulário", icon: <FileText className="w-4 h-4" />, category: "interactive" },

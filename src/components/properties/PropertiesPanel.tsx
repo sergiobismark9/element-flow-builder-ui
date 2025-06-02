@@ -38,25 +38,27 @@ export const PropertiesPanel = ({ component, onUpdateComponent }: PropertiesPane
 
       <div className="p-4 space-y-6 overflow-y-auto max-h-[calc(100vh-120px)]">
         {/* Content */}
-        <div className="space-y-2">
-          <Label className="text-sm font-medium text-gray-700">Conteúdo</Label>
-          {component.type === "text" || component.type === "list" ? (
-            <textarea
-              value={component.content || ""}
-              onChange={(e) => updateContent(e.target.value)}
-              className="w-full p-2 border border-gray-200 rounded-md text-sm resize-none"
-              rows={3}
-              placeholder={component.type === "list" ? "Digite cada item em uma linha" : "Digite o texto..."}
-            />
-          ) : (
-            <Input
-              value={component.content || ""}
-              onChange={(e) => updateContent(e.target.value)}
-              placeholder={getPlaceholderText(component.type)}
-              className="text-sm"
-            />
-          )}
-        </div>
+        {!["section", "columns", "navigation", "form", "gallery", "map"].includes(component.type) && (
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700">Conteúdo</Label>
+            {component.type === "text" || component.type === "list" || component.type === "custom-html" ? (
+              <textarea
+                value={component.content || ""}
+                onChange={(e) => updateContent(e.target.value)}
+                className="w-full p-2 border border-gray-200 rounded-md text-sm resize-none"
+                rows={component.type === "custom-html" ? 5 : 3}
+                placeholder={getPlaceholderText(component.type)}
+              />
+            ) : (
+              <Input
+                value={component.content || ""}
+                onChange={(e) => updateContent(e.target.value)}
+                placeholder={getPlaceholderText(component.type)}
+                className="text-sm"
+              />
+            )}
+          </div>
+        )}
 
         {/* Typography */}
         {(component.type === "heading" || component.type === "text" || component.type === "list") && (
@@ -162,6 +164,24 @@ export const PropertiesPanel = ({ component, onUpdateComponent }: PropertiesPane
                 </SelectContent>
               </Select>
             </div>
+
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">Cor de Fundo</Label>
+              <div className="flex items-center space-x-3">
+                <input
+                  type="color"
+                  value={component.props?.backgroundColor || "#4338ca"}
+                  onChange={(e) => updateProps("backgroundColor", e.target.value)}
+                  className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
+                />
+                <Input
+                  value={component.props?.backgroundColor || "#4338ca"}
+                  onChange={(e) => updateProps("backgroundColor", e.target.value)}
+                  className="text-sm font-mono"
+                  placeholder="#4338ca"
+                />
+              </div>
+            </div>
           </>
         )}
 
@@ -198,43 +218,74 @@ export const PropertiesPanel = ({ component, onUpdateComponent }: PropertiesPane
           </>
         )}
 
-        {/* Video Properties */}
-        {component.type === "video" && (
-          <>
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">URL do Vídeo</Label>
+        {/* Section Properties */}
+        {component.type === "section" && (
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700">Cor de Fundo</Label>
+            <div className="flex items-center space-x-3">
+              <input
+                type="color"
+                value={component.props?.backgroundColor || "#ffffff"}
+                onChange={(e) => updateProps("backgroundColor", e.target.value)}
+                className="w-8 h-8 rounded border border-gray-300 cursor-pointer"
+              />
               <Input
-                value={component.content || ""}
-                onChange={(e) => updateContent(e.target.value)}
-                placeholder="https://www.youtube.com/embed/..."
-                className="text-sm"
+                value={component.props?.backgroundColor || "#ffffff"}
+                onChange={(e) => updateProps("backgroundColor", e.target.value)}
+                className="text-sm font-mono"
+                placeholder="#ffffff"
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label className="text-sm font-medium text-gray-700">Configurações</Label>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="autoplay"
-                  checked={component.props?.autoplay || false}
-                  onChange={(e) => updateProps("autoplay", e.target.checked)}
-                  className="rounded"
-                />
-                <label htmlFor="autoplay" className="text-sm text-gray-700">Reprodução automática</label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <input
-                  type="checkbox"
-                  id="controls"
-                  checked={component.props?.controls !== false}
-                  onChange={(e) => updateProps("controls", e.target.checked)}
-                  className="rounded"
-                />
-                <label htmlFor="controls" className="text-sm text-gray-700">Mostrar controles</label>
-              </div>
-            </div>
-          </>
+          </div>
+        )}
+
+        {/* Columns Properties */}
+        {component.type === "columns" && (
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700">Número de Colunas</Label>
+            <Select
+              value={String(component.props?.columns || 2)}
+              onValueChange={(value) => updateProps("columns", parseInt(value))}
+            >
+              <SelectTrigger className="text-sm">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1">1 Coluna</SelectItem>
+                <SelectItem value="2">2 Colunas</SelectItem>
+                <SelectItem value="3">3 Colunas</SelectItem>
+                <SelectItem value="4">4 Colunas</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        )}
+
+        {/* Navigation Properties */}
+        {component.type === "navigation" && (
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700">Itens do Menu</Label>
+            <textarea
+              value={component.props?.navItems?.join('\n') || "Home\nSobre\nServiços\nContato"}
+              onChange={(e) => updateProps("navItems", e.target.value.split('\n').filter(item => item.trim()))}
+              className="w-full p-2 border border-gray-200 rounded-md text-sm resize-none"
+              rows={4}
+              placeholder="Digite cada item em uma linha"
+            />
+          </div>
+        )}
+
+        {/* Gallery Properties */}
+        {component.type === "gallery" && (
+          <div className="space-y-2">
+            <Label className="text-sm font-medium text-gray-700">URLs das Imagens</Label>
+            <textarea
+              value={component.props?.images?.join('\n') || "/placeholder.svg\n/placeholder.svg\n/placeholder.svg"}
+              onChange={(e) => updateProps("images", e.target.value.split('\n').filter(item => item.trim()))}
+              className="w-full p-2 border border-gray-200 rounded-md text-sm resize-none"
+              rows={4}
+              placeholder="Digite cada URL em uma linha"
+            />
+          </div>
         )}
 
         {/* Spacing */}
@@ -269,6 +320,34 @@ export const PropertiesPanel = ({ component, onUpdateComponent }: PropertiesPane
                 className="w-full"
               />
             </div>
+
+            <div>
+              <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <span>Padding Superior</span>
+                <span>{component.props?.paddingTop || 0}px</span>
+              </div>
+              <Slider
+                value={[component.props?.paddingTop || 0]}
+                onValueChange={([value]) => updateProps("paddingTop", value)}
+                max={100}
+                step={4}
+                className="w-full"
+              />
+            </div>
+            
+            <div>
+              <div className="flex justify-between text-xs text-gray-500 mb-1">
+                <span>Padding Inferior</span>
+                <span>{component.props?.paddingBottom || 0}px</span>
+              </div>
+              <Slider
+                value={[component.props?.paddingBottom || 0]}
+                onValueChange={([value]) => updateProps("paddingBottom", value)}
+                max={100}
+                step={4}
+                className="w-full"
+              />
+            </div>
           </div>
         </div>
       </div>
@@ -284,8 +363,13 @@ function getComponentDisplayName(type: string): string {
     image: "Imagem",
     video: "Vídeo",
     list: "Lista",
+    section: "Seção",
+    columns: "Colunas",
+    navigation: "Navegação",
     form: "Formulário",
     gallery: "Galeria",
+    map: "Mapa",
+    "custom-html": "HTML Personalizado",
   };
   return names[type] || type;
 }
@@ -298,6 +382,7 @@ function getPlaceholderText(type: string): string {
     image: "URL da imagem...",
     video: "URL do vídeo (YouTube embed)...",
     list: "Digite cada item em uma linha...",
+    "custom-html": "<div>Seu HTML aqui</div>",
   };
   return placeholders[type] || "Digite o conteúdo...";
 }
