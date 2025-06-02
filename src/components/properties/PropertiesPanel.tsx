@@ -40,26 +40,26 @@ export const PropertiesPanel = ({ component, onUpdateComponent }: PropertiesPane
         {/* Content */}
         <div className="space-y-2">
           <Label className="text-sm font-medium text-gray-700">Conteúdo</Label>
-          {component.type === "text" ? (
+          {component.type === "text" || component.type === "list" ? (
             <textarea
               value={component.content || ""}
               onChange={(e) => updateContent(e.target.value)}
               className="w-full p-2 border border-gray-200 rounded-md text-sm resize-none"
               rows={3}
-              placeholder="Digite o texto..."
+              placeholder={component.type === "list" ? "Digite cada item em uma linha" : "Digite o texto..."}
             />
           ) : (
             <Input
               value={component.content || ""}
               onChange={(e) => updateContent(e.target.value)}
-              placeholder="Digite o conteúdo..."
+              placeholder={getPlaceholderText(component.type)}
               className="text-sm"
             />
           )}
         </div>
 
         {/* Typography */}
-        {(component.type === "heading" || component.type === "text") && (
+        {(component.type === "heading" || component.type === "text" || component.type === "list") && (
           <>
             <div className="space-y-2">
               <Label className="text-sm font-medium text-gray-700">Tamanho da Fonte</Label>
@@ -198,6 +198,45 @@ export const PropertiesPanel = ({ component, onUpdateComponent }: PropertiesPane
           </>
         )}
 
+        {/* Video Properties */}
+        {component.type === "video" && (
+          <>
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">URL do Vídeo</Label>
+              <Input
+                value={component.content || ""}
+                onChange={(e) => updateContent(e.target.value)}
+                placeholder="https://www.youtube.com/embed/..."
+                className="text-sm"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-gray-700">Configurações</Label>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="autoplay"
+                  checked={component.props?.autoplay || false}
+                  onChange={(e) => updateProps("autoplay", e.target.checked)}
+                  className="rounded"
+                />
+                <label htmlFor="autoplay" className="text-sm text-gray-700">Reprodução automática</label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  id="controls"
+                  checked={component.props?.controls !== false}
+                  onChange={(e) => updateProps("controls", e.target.checked)}
+                  className="rounded"
+                />
+                <label htmlFor="controls" className="text-sm text-gray-700">Mostrar controles</label>
+              </div>
+            </div>
+          </>
+        )}
+
         {/* Spacing */}
         <div className="space-y-4">
           <Label className="text-sm font-medium text-gray-700">Espaçamento</Label>
@@ -244,8 +283,21 @@ function getComponentDisplayName(type: string): string {
     button: "Botão",
     image: "Imagem",
     video: "Vídeo",
+    list: "Lista",
     form: "Formulário",
     gallery: "Galeria",
   };
   return names[type] || type;
+}
+
+function getPlaceholderText(type: string): string {
+  const placeholders: Record<string, string> = {
+    heading: "Digite o título...",
+    text: "Digite o texto...",
+    button: "Texto do botão...",
+    image: "URL da imagem...",
+    video: "URL do vídeo (YouTube embed)...",
+    list: "Digite cada item em uma linha...",
+  };
+  return placeholders[type] || "Digite o conteúdo...";
 }

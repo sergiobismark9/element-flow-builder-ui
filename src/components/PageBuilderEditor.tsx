@@ -115,19 +115,21 @@ function getDefaultContent(type: string): string {
     button: "Clique Aqui",
     image: "/placeholder.svg",
     video: "https://www.youtube.com/embed/dQw4w9WgXcQ",
+    list: "Item 1\nItem 2\nItem 3",
   };
   return defaults[type] || "";
 }
 
 function getDefaultProps(type: string): Record<string, any> {
   const defaults: Record<string, Record<string, any>> = {
-    heading: { level: 1, color: "#1f2937", fontSize: "2xl" },
-    text: { color: "#4b5563", fontSize: "base" },
-    button: { variant: "primary", size: "medium" },
-    image: { alt: "Imagem", width: "full" },
-    video: { autoplay: false, controls: true },
+    heading: { level: 1, color: "#1f2937", fontSize: "2xl", marginTop: 0, marginBottom: 0 },
+    text: { color: "#4b5563", fontSize: "base", marginTop: 0, marginBottom: 0 },
+    button: { variant: "default", size: "default", marginTop: 0, marginBottom: 0 },
+    image: { alt: "Imagem", width: "full", marginTop: 0, marginBottom: 0 },
+    video: { autoplay: false, controls: true, marginTop: 0, marginBottom: 0 },
+    list: { color: "#4b5563", fontSize: "base", marginTop: 0, marginBottom: 0 },
   };
-  return defaults[type] || {};
+  return defaults[type] || { marginTop: 0, marginBottom: 0 };
 }
 
 function getComponentDisplayName(type: string): string {
@@ -137,6 +139,7 @@ function getComponentDisplayName(type: string): string {
     button: "Botão",
     image: "Imagem",
     video: "Vídeo",
+    list: "Lista",
     form: "Formulário",
     gallery: "Galeria",
   };
