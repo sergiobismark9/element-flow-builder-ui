@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Component } from "../PageBuilderEditor";
 import { Button } from "@/components/ui/button";
@@ -11,6 +10,7 @@ interface ComponentRendererProps {
   onUpdate: (updates: Partial<Component>) => void;
   onDelete: () => void;
   isPreviewMode: boolean;
+  onAddComponent?: (type: string, content?: string, parentId?: string) => void;
 }
 
 export const ComponentRenderer = ({
@@ -20,6 +20,7 @@ export const ComponentRenderer = ({
   onUpdate,
   onDelete,
   isPreviewMode,
+  onAddComponent,
 }: ComponentRendererProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(component.content || "");
@@ -252,26 +253,67 @@ export const ComponentRenderer = ({
       case "section":
         return (
           <div 
-            className="min-h-[100px] border-2 border-dashed border-gray-300 rounded-lg p-4"
+            className="min-h-[120px] border-2 border-dashed border-gray-300 rounded-lg p-6 relative"
             style={{
               backgroundColor: component.props?.backgroundColor || "transparent",
               ...spacingStyles
             }}
           >
             <div className="text-center text-gray-500">
-              <h3 className="font-medium">Seção</h3>
-              <p className="text-sm">Arraste componentes aqui</p>
+              <h3 className="font-medium text-sm">Seção Container</h3>
+              <p className="text-xs mt-1">Arraste componentes aqui ou clique para adicionar</p>
             </div>
+            
+            {!isPreviewMode && onAddComponent && (
+              <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity bg-blue-50/20 rounded-lg flex items-center justify-center">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAddComponent("text", undefined, component.id);
+                  }}
+                  className="bg-white shadow-sm"
+                >
+                  + Adicionar Componente
+                </Button>
+              </div>
+            )}
           </div>
         );
 
       case "columns":
-        const columnCount = component.props?.columns || 2;
+        const columnCount = Math.max(1, Math.min(6, component.props?.columns || 2));
+        const gridClass = `grid-cols-${columnCount}`;
+        
         return (
-          <div className={`grid grid-cols-${columnCount} gap-4`} style={spacingStyles}>
+          <div 
+            className={`grid ${gridClass} gap-4`} 
+            style={spacingStyles}
+          >
             {Array.from({ length: columnCount }).map((_, index) => (
-              <div key={index} className="min-h-[80px] border-2 border-dashed border-gray-300 rounded p-3">
-                <p className="text-sm text-gray-500 text-center">Coluna {index + 1}</p>
+              <div 
+                key={index} 
+                className="min-h-[100px] border-2 border-dashed border-gray-300 rounded-lg p-4 relative bg-gray-50/30"
+              >
+                <p className="text-xs text-gray-500 text-center font-medium">Coluna {index + 1}</p>
+                <p className="text-xs text-gray-400 text-center mt-1">Arraste componentes aqui</p>
+                
+                {!isPreviewMode && onAddComponent && (
+                  <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity bg-blue-50/30 rounded-lg flex items-center justify-center">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onAddComponent("text", undefined, `${component.id}-col-${index}`);
+                      }}
+                      className="bg-white shadow-sm text-xs"
+                    >
+                      + Adicionar
+                    </Button>
+                  </div>
+                )}
               </div>
             ))}
           </div>
@@ -395,7 +437,7 @@ export const ComponentRenderer = ({
       style={{ padding: "1.5rem" }}
     >
       {!isPreviewMode && (
-        <div className={`absolute right-4 top-4 flex space-x-1 transition-opacity ${
+        <div className={`absolute right-4 top-4 flex space-x-1 transition-opacity z-10 ${
           isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
         }`}>
           <button

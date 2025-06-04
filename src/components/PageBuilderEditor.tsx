@@ -1,10 +1,13 @@
-
 import { useState } from "react";
 import { ComponentSidebar } from "./sidebar/ComponentSidebar";
 import { EditorCanvas } from "./editor/EditorCanvas";
 import { PropertiesPanel } from "./properties/PropertiesPanel";
 import { EditorHeader } from "./header/EditorHeader";
+import { TemplateLibrary } from "./templates/TemplateLibrary";
 import { useToast } from "@/hooks/use-toast";
+import { useHistory } from "@/hooks/useHistory";
+import { useResponsive } from "@/hooks/useResponsive";
+import { downloadHTML } from "@/utils/exportUtils";
 
 export interface Component {
   id: string;
@@ -18,7 +21,22 @@ export const PageBuilderEditor = () => {
   const [components, setComponents] = useState<Component[]>([]);
   const [selectedComponent, setSelectedComponent] = useState<Component | null>(null);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
   const { toast } = useToast();
+  
+  const { 
+    pushToHistory, 
+    undo, 
+    redo, 
+    canUndo, 
+    canRedo 
+  } = useHistory(components);
+  
+  const { 
+    currentBreakpoint, 
+    setCurrentBreakpoint, 
+    getBreakpointStyles 
+  } = useResponsive();
 
   const addComponent = (type: string, content?: string, index?: number) => {
     const newComponent: Component = {
@@ -28,16 +46,15 @@ export const PageBuilderEditor = () => {
       props: getDefaultProps(type),
     };
 
+    const newComponents = [...components];
     if (index !== undefined) {
-      setComponents(prev => {
-        const newComponents = [...prev];
-        newComponents.splice(index, 0, newComponent);
-        return newComponents;
-      });
+      newComponents.splice(index, 0, newComponent);
     } else {
-      setComponents(prev => [...prev, newComponent]);
+      newComponents.push(newComponent);
     }
     
+    setComponents(newComponents);
+    pushToHistory(newComponents);
     setSelectedComponent(newComponent);
     
     toast({
@@ -47,9 +64,12 @@ export const PageBuilderEditor = () => {
   };
 
   const updateComponent = (id: string, updates: Partial<Component>) => {
-    setComponents(prev => prev.map(comp => 
+    const newComponents = components.map(comp => 
       comp.id === id ? { ...comp, ...updates } : comp
-    ));
+    );
+    
+    setComponents(newComponents);
+    pushToHistory(newComponents);
     
     if (selectedComponent?.id === id) {
       setSelectedComponent(prev => prev ? { ...prev, ...updates } : null);
@@ -57,7 +77,10 @@ export const PageBuilderEditor = () => {
   };
 
   const deleteComponent = (id: string) => {
-    setComponents(prev => prev.filter(comp => comp.id !== id));
+    const newComponents = components.filter(comp => comp.id !== id);
+    setComponents(newComponents);
+    pushToHistory(newComponents);
+    
     if (selectedComponent?.id === id) {
       setSelectedComponent(null);
     }
@@ -69,7 +92,43 @@ export const PageBuilderEditor = () => {
     });
   };
 
+  const handleUndo = () => {
+    const prevComponents = undo();
+    if (prevComponents) {
+      setComponents(prevComponents);
+      setSelectedComponent(null);
+      toast({
+        title: "Ação desfeita",
+        description: "A última ação foi desfeita",
+      });
+    }
+  };
+
+  const handleRedo = () => {
+    const nextComponents = redo();
+    if (nextComponents) {
+      setComponents(nextComponents);
+      setSelectedComponent(null);
+      toast({
+        title: "Ação refeita",
+        description: "A ação foi refeita",
+      });
+    }
+  };
+
+  const handleApplyTemplate = (templateComponents: Component[]) => {
+    setComponents(templateComponents);
+    pushToHistory(templateComponents);
+    setSelectedComponent(null);
+    
+    toast({
+      title: "Template aplicado",
+      description: "O template foi aplicado com sucesso",
+    });
+  };
+
   const handleSave = () => {
+    // Simular salvamento
     toast({
       title: "Página salva",
       description: "Suas alterações foram salvas com sucesso",
@@ -83,13 +142,63 @@ export const PageBuilderEditor = () => {
     });
   };
 
+  const handleExport = () => {
+    downloadHTML(components, "minha-pagina.html");
+    toast({
+      title: "Página exportada",
+      description: "O arquivo HTML foi baixado com sucesso",
+    });
+  };
+
+  // Atalhos de teclado
+  useState(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey) {
+        switch (e.key) {
+          case 'z':
+            if (e.shiftKey) {
+              e.preventDefault();
+              handleRedo();
+            } else {
+              e.preventDefault();
+              handleUndo();
+            }
+            break;
+          case 'y':
+            e.preventDefault();
+            handleRedo();
+            break;
+          case 's':
+            e.preventDefault();
+            handleSave();
+            break;
+        }
+      }
+      
+      if (e.key === 'Delete' && selectedComponent && !isPreviewMode) {
+        deleteComponent(selectedComponent.id);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  });
+
   return (
     <div className="h-screen flex flex-col bg-white">
       <EditorHeader 
         onSave={handleSave}
         onPublish={handlePublish}
+        onExport={handleExport}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
+        onShowTemplates={() => setShowTemplates(true)}
+        canUndo={canUndo}
+        canRedo={canRedo}
         isPreviewMode={isPreviewMode}
         onPreviewToggle={setIsPreviewMode}
+        currentBreakpoint={currentBreakpoint}
+        onBreakpointChange={setCurrentBreakpoint}
       />
       
       <div className="flex-1 flex overflow-hidden">
@@ -105,6 +214,8 @@ export const PageBuilderEditor = () => {
           onDeleteComponent={deleteComponent}
           onAddComponent={addComponent}
           isPreviewMode={isPreviewMode}
+          currentBreakpoint={currentBreakpoint}
+          canvasStyles={isPreviewMode ? undefined : getBreakpointStyles(currentBreakpoint)}
         />
         
         {!isPreviewMode && selectedComponent && (
@@ -114,6 +225,13 @@ export const PageBuilderEditor = () => {
           />
         )}
       </div>
+
+      {showTemplates && (
+        <TemplateLibrary
+          onApplyTemplate={handleApplyTemplate}
+          onClose={() => setShowTemplates(false)}
+        />
+      )}
     </div>
   );
 };
