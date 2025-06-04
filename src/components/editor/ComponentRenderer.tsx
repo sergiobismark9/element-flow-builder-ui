@@ -10,7 +10,7 @@ interface ComponentRendererProps {
   onUpdate: (updates: Partial<Component>) => void;
   onDelete: () => void;
   isPreviewMode: boolean;
-  onAddComponent?: (type: string, content?: string, parentId?: string) => void;
+  onAddComponent?: (type: string, content?: string, index?: number) => void;
 }
 
 export const ComponentRenderer = ({
@@ -271,7 +271,7 @@ export const ComponentRenderer = ({
                   variant="outline"
                   onClick={(e) => {
                     e.stopPropagation();
-                    onAddComponent("text", undefined, component.id);
+                    onAddComponent("text");
                   }}
                   className="bg-white shadow-sm"
                 >
@@ -306,7 +306,7 @@ export const ComponentRenderer = ({
                       variant="outline"
                       onClick={(e) => {
                         e.stopPropagation();
-                        onAddComponent("text", undefined, `${component.id}-col-${index}`);
+                        onAddComponent("text");
                       }}
                       className="bg-white shadow-sm text-xs"
                     >
