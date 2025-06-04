@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Component } from "../PageBuilderEditor";
 import { Button } from "@/components/ui/button";
-import { Trash2, Move, Edit3 } from "lucide-react";
+import { Trash2, Move, Edit3, Plus } from "lucide-react";
 
 interface ComponentRendererProps {
   component: Component;
@@ -9,8 +9,9 @@ interface ComponentRendererProps {
   onSelect: () => void;
   onUpdate: (updates: Partial<Component>) => void;
   onDelete: () => void;
+  onAddComponent: (type: string, content?: string, parentId?: string, index?: number) => void;
   isPreviewMode: boolean;
-  onAddComponent?: (type: string, content?: string, index?: number) => void;
+  depth?: number;
 }
 
 export const ComponentRenderer = ({
@@ -19,8 +20,9 @@ export const ComponentRenderer = ({
   onSelect,
   onUpdate,
   onDelete,
-  isPreviewMode,
   onAddComponent,
+  isPreviewMode,
+  depth = 0,
 }: ComponentRendererProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editContent, setEditContent] = useState(component.content || "");
@@ -42,11 +44,45 @@ export const ComponentRenderer = ({
     setEditContent(component.content || "");
   };
 
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const componentType = e.dataTransfer.getData("text/plain");
+    if (componentType && (component.type === "section" || component.type === "columns")) {
+      onAddComponent(componentType, undefined, component.id);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    if (component.type === "section" || component.type === "columns") {
+      e.dataTransfer.dropEffect = "copy";
+    }
+  };
+
   const spacingStyles = {
     marginTop: `${component.props?.marginTop || 0}px`,
     marginBottom: `${component.props?.marginBottom || 0}px`,
     paddingTop: `${component.props?.paddingTop || 0}px`,
     paddingBottom: `${component.props?.paddingBottom || 0}px`,
+  };
+
+  const renderChildren = () => {
+    if (!component.children || component.children.length === 0) return null;
+    
+    return component.children.map((child) => (
+      <ComponentRenderer
+        key={child.id}
+        component={child}
+        isSelected={isSelected}
+        onSelect={onSelect}
+        onUpdate={onUpdate}
+        onDelete={onDelete}
+        onAddComponent={onAddComponent}
+        isPreviewMode={isPreviewMode}
+        depth={depth + 1}
+      />
+    ));
   };
 
   const renderComponent = () => {
@@ -168,6 +204,117 @@ export const ComponentRenderer = ({
           </div>
         );
 
+      case "section":
+        return (
+          <div 
+            className="min-h-[120px] border-2 border-dashed border-gray-300 rounded-lg p-6 relative transition-colors hover:border-primary hover:bg-primary/5"
+            style={{
+              backgroundColor: component.props?.backgroundColor || "transparent",
+              ...spacingStyles
+            }}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+          >
+            {component.children && component.children.length > 0 ? (
+              <div className="space-y-4">
+                {renderChildren()}
+              </div>
+            ) : (
+              <div className="text-center text-gray-500">
+                <h3 className="font-medium text-sm">Seção Container</h3>
+                <p className="text-xs mt-1">Arraste componentes aqui ou clique para adicionar</p>
+              </div>
+            )}
+            
+            {!isPreviewMode && (
+              <div className="absolute top-2 right-2 opacity-0 hover:opacity-100 transition-opacity">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAddComponent("text", undefined, component.id);
+                  }}
+                  className="bg-white shadow-sm"
+                >
+                  <Plus className="w-3 h-3 mr-1" />
+                  Adicionar
+                </Button>
+              </div>
+            )}
+          </div>
+        );
+
+      case "columns":
+        const columnCount = Math.max(1, Math.min(6, component.props?.columns || 2));
+        
+        return (
+          <div className="space-y-4" style={spacingStyles}>
+            <div className={`grid grid-cols-${columnCount} gap-4`}>
+              {Array.from({ length: columnCount }).map((_, index) => {
+                const columnChildren = component.children?.filter((child, childIndex) => 
+                  childIndex % columnCount === index
+                ) || [];
+                
+                return (
+                  <div 
+                    key={index} 
+                    className="min-h-[100px] border-2 border-dashed border-gray-300 rounded-lg p-4 relative bg-gray-50/30 transition-colors hover:border-primary hover:bg-primary/5"
+                    onDrop={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const componentType = e.dataTransfer.getData("text/plain");
+                      if (componentType) {
+                        onAddComponent(componentType, undefined, component.id);
+                      }
+                    }}
+                    onDragOver={handleDragOver}
+                  >
+                    {columnChildren.length > 0 ? (
+                      <div className="space-y-2">
+                        {columnChildren.map((child) => (
+                          <ComponentRenderer
+                            key={child.id}
+                            component={child}
+                            isSelected={isSelected}
+                            onSelect={onSelect}
+                            onUpdate={onUpdate}
+                            onDelete={onDelete}
+                            onAddComponent={onAddComponent}
+                            isPreviewMode={isPreviewMode}
+                            depth={depth + 1}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-xs text-gray-500 text-center font-medium">Coluna {index + 1}</p>
+                        <p className="text-xs text-gray-400 text-center mt-1">Arraste componentes aqui</p>
+                      </>
+                    )}
+                    
+                    {!isPreviewMode && (
+                      <div className="absolute top-1 right-1 opacity-0 hover:opacity-100 transition-opacity">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onAddComponent("text", undefined, component.id);
+                          }}
+                          className="bg-white shadow-sm text-xs h-6 px-2"
+                        >
+                          <Plus className="w-2 h-2" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+
       case "video":
         return (
           <div className="cursor-pointer" style={spacingStyles} onClick={handleEdit}>
@@ -247,75 +394,6 @@ export const ComponentRenderer = ({
                 Editar lista
               </button>
             )}
-          </div>
-        );
-
-      case "section":
-        return (
-          <div 
-            className="min-h-[120px] border-2 border-dashed border-gray-300 rounded-lg p-6 relative"
-            style={{
-              backgroundColor: component.props?.backgroundColor || "transparent",
-              ...spacingStyles
-            }}
-          >
-            <div className="text-center text-gray-500">
-              <h3 className="font-medium text-sm">Seção Container</h3>
-              <p className="text-xs mt-1">Arraste componentes aqui ou clique para adicionar</p>
-            </div>
-            
-            {!isPreviewMode && onAddComponent && (
-              <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity bg-blue-50/20 rounded-lg flex items-center justify-center">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onAddComponent("text");
-                  }}
-                  className="bg-white shadow-sm"
-                >
-                  + Adicionar Componente
-                </Button>
-              </div>
-            )}
-          </div>
-        );
-
-      case "columns":
-        const columnCount = Math.max(1, Math.min(6, component.props?.columns || 2));
-        const gridClass = `grid-cols-${columnCount}`;
-        
-        return (
-          <div 
-            className={`grid ${gridClass} gap-4`} 
-            style={spacingStyles}
-          >
-            {Array.from({ length: columnCount }).map((_, index) => (
-              <div 
-                key={index} 
-                className="min-h-[100px] border-2 border-dashed border-gray-300 rounded-lg p-4 relative bg-gray-50/30"
-              >
-                <p className="text-xs text-gray-500 text-center font-medium">Coluna {index + 1}</p>
-                <p className="text-xs text-gray-400 text-center mt-1">Arraste componentes aqui</p>
-                
-                {!isPreviewMode && onAddComponent && (
-                  <div className="absolute inset-0 opacity-0 hover:opacity-100 transition-opacity bg-blue-50/30 rounded-lg flex items-center justify-center">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onAddComponent("text");
-                      }}
-                      className="bg-white shadow-sm text-xs"
-                    >
-                      + Adicionar
-                    </Button>
-                  </div>
-                )}
-              </div>
-            ))}
           </div>
         );
 
@@ -431,12 +509,12 @@ export const ComponentRenderer = ({
       className={`relative group transition-all duration-200 ${
         isSelected && !isPreviewMode
           ? "ring-2 ring-primary ring-offset-2 bg-primary/5"
-          : "hover:bg-gray-50"
+          : depth === 0 ? "hover:bg-gray-50" : ""
       } ${!isPreviewMode ? "cursor-pointer" : ""}`}
       onClick={!isPreviewMode ? onSelect : undefined}
-      style={{ padding: "1.5rem" }}
+      style={{ padding: depth === 0 ? "1.5rem" : "0.5rem" }}
     >
-      {!isPreviewMode && (
+      {!isPreviewMode && depth === 0 && (
         <div className={`absolute right-4 top-4 flex space-x-1 transition-opacity z-10 ${
           isSelected ? "opacity-100" : "opacity-0 group-hover:opacity-100"
         }`}>

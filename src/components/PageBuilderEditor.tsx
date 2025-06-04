@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { ComponentSidebar } from "./sidebar/ComponentSidebar";
 import { EditorCanvas } from "./editor/EditorCanvas";
@@ -7,7 +8,6 @@ import { TemplateLibrary } from "./templates/TemplateLibrary";
 import { useToast } from "@/hooks/use-toast";
 import { useHistory } from "@/hooks/useHistory";
 import { useResponsive } from "@/hooks/useResponsive";
-import { downloadHTML } from "@/utils/exportUtils";
 
 export interface Component {
   id: string;
@@ -38,19 +38,43 @@ export const PageBuilderEditor = () => {
     getBreakpointStyles 
   } = useResponsive();
 
-  const addComponent = (type: string, content?: string, index?: number) => {
+  const addComponent = (type: string, content?: string, parentId?: string, index?: number) => {
     const newComponent: Component = {
       id: `${type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
       type,
       content: content || getDefaultContent(type),
       props: getDefaultProps(type),
+      children: [],
     };
 
-    const newComponents = [...components];
-    if (index !== undefined) {
-      newComponents.splice(index, 0, newComponent);
+    const addToParent = (items: Component[], targetParentId: string): Component[] => {
+      return items.map(item => {
+        if (item.id === targetParentId) {
+          const newChildren = [...(item.children || [])];
+          if (index !== undefined) {
+            newChildren.splice(index, 0, newComponent);
+          } else {
+            newChildren.push(newComponent);
+          }
+          return { ...item, children: newChildren };
+        }
+        if (item.children && item.children.length > 0) {
+          return { ...item, children: addToParent(item.children, targetParentId) };
+        }
+        return item;
+      });
+    };
+
+    let newComponents;
+    if (parentId) {
+      newComponents = addToParent(components, parentId);
     } else {
-      newComponents.push(newComponent);
+      newComponents = [...components];
+      if (index !== undefined) {
+        newComponents.splice(index, 0, newComponent);
+      } else {
+        newComponents.push(newComponent);
+      }
     }
     
     setComponents(newComponents);
@@ -64,10 +88,19 @@ export const PageBuilderEditor = () => {
   };
 
   const updateComponent = (id: string, updates: Partial<Component>) => {
-    const newComponents = components.map(comp => 
-      comp.id === id ? { ...comp, ...updates } : comp
-    );
-    
+    const updateInTree = (items: Component[]): Component[] => {
+      return items.map(item => {
+        if (item.id === id) {
+          return { ...item, ...updates };
+        }
+        if (item.children && item.children.length > 0) {
+          return { ...item, children: updateInTree(item.children) };
+        }
+        return item;
+      });
+    };
+
+    const newComponents = updateInTree(components);
     setComponents(newComponents);
     pushToHistory(newComponents);
     
@@ -77,7 +110,16 @@ export const PageBuilderEditor = () => {
   };
 
   const deleteComponent = (id: string) => {
-    const newComponents = components.filter(comp => comp.id !== id);
+    const deleteFromTree = (items: Component[]): Component[] => {
+      return items.filter(item => item.id !== id).map(item => {
+        if (item.children && item.children.length > 0) {
+          return { ...item, children: deleteFromTree(item.children) };
+        }
+        return item;
+      });
+    };
+
+    const newComponents = deleteFromTree(components);
     setComponents(newComponents);
     pushToHistory(newComponents);
     
@@ -142,14 +184,6 @@ export const PageBuilderEditor = () => {
     });
   };
 
-  const handleExport = () => {
-    downloadHTML(components, "minha-pagina.html");
-    toast({
-      title: "Página exportada",
-      description: "O arquivo HTML foi baixado com sucesso",
-    });
-  };
-
   // Atalhos de teclado
   useState(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -189,7 +223,6 @@ export const PageBuilderEditor = () => {
       <EditorHeader 
         onSave={handleSave}
         onPublish={handlePublish}
-        onExport={handleExport}
         onUndo={handleUndo}
         onRedo={handleRedo}
         onShowTemplates={() => setShowTemplates(true)}
