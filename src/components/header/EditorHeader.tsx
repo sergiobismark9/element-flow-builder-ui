@@ -1,12 +1,11 @@
 
 import { Button } from "@/components/ui/button";
-import { Eye, Save, Globe, Undo, Redo, Download, Smartphone, Tablet, Monitor, Grid3x3 } from "lucide-react";
+import { Eye, Save, Globe, Undo, Redo, Smartphone, Tablet, Monitor, Grid3x3 } from "lucide-react";
 import { Breakpoint } from "@/hooks/useResponsive";
 
 interface EditorHeaderProps {
   onSave: () => void;
   onPublish: () => void;
-  onExport: () => void;
   onUndo: () => void;
   onRedo: () => void;
   onShowTemplates: () => void;
@@ -21,7 +20,6 @@ interface EditorHeaderProps {
 export const EditorHeader = ({ 
   onSave, 
   onPublish,
-  onExport,
   onUndo,
   onRedo,
   onShowTemplates,
@@ -124,17 +122,6 @@ export const EditorHeader = ({
         >
           <Eye className="w-4 h-4" />
           <span>{isPreviewMode ? "Editar" : "Preview"}</span>
-        </Button>
-        
-        {/* Export */}
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={onExport}
-          className="flex items-center space-x-2"
-        >
-          <Download className="w-4 h-4" />
-          <span>Exportar</span>
         </Button>
 
         {/* Save */}
